@@ -1,13 +1,13 @@
 name = "Expect"
 uuid = "6a31a4e8-6e70-5a2d-b005-bc2d500d80a5"
 repo = "https://github.com/PerezHz/Expect.jl.git"
-version = "0.1.0"
+version = "0.2.0"
 
 [deps]
 Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 
 [compat]
-julia = "≥ 1.0.0"
+julia = "≥ 1.1.0"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
