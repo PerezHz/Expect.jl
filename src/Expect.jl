@@ -72,14 +72,6 @@ function raw!(proc::ExpectProc, raw::Bool)
         # pipes are always raw
         return raw
     else
-        @static if VERSION < v"0.7"
-            # libuv keeps an internal "mode" state which prevents us to call
-            # cfmakeraw() again, even if the connected slave changed the discipline
-            # on our back. Work this around by toggling the mode twice.
-            # See: https://github.com/libuv/libuv/issues/1292
-            # TODO: determine valid VERSION when fix gets merged
-            raw!(proc.out_stream, !raw)
-        end
         raw!(proc.out_stream, raw)
     end
 end
@@ -132,14 +124,15 @@ function _spawn(cmd::Cmd, env::Base.EnvDict, pty::Bool)
             close(ttym)
             ccall(:close, Cint, (Cint,), fds)
         end
+
+        Base.start_reading(in_stream)
     else
         pipe = Pipe()
-        in_stream, proc = open(cmd, "r", pipe)
+        proc = open(cmd, "r", pipe)
         out_stream = Base.pipe_writer(pipe)
-        in_stream = Base.pipe_reader(in_stream)
+        in_stream = Base.pipe_reader(proc)
     end
 
-    Base.start_reading(in_stream)
     return (in_stream, out_stream, proc)
 end
 
@@ -220,9 +213,9 @@ readbytes!(proc::ExpectProc, b::AbstractVector{UInt8}, nb=length(b); timeout::Re
         readbytes!(proc.in_stream, b, nb)
     end
 
-readuntil(proc::ExpectProc, delim::AbstractString; timeout::Real=proc.timeout) =
+readuntil(proc::ExpectProc, delim::AbstractString; timeout::Real=proc.timeout, keep::Bool=false) =
     _timed_wait(proc; timeout=timeout) do
-        readuntil(proc.in_stream, delim)
+        readuntil(proc.in_stream, delim, keep=keep)
     end
 
 isopen(proc::ExpectProc) = isopen(proc.in_stream)
